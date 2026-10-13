@@ -50,18 +50,18 @@ The CSV parser supports comma, semicolon, and tab separators and skips nonnumeri
 
 For multiple optical elements in series, the combined transmission at each wavelength is calculated by multiplying their fractional transmissions:
 
-\[
+$$
 T_{\mathrm{total}}(\lambda)
 = 100\prod_{i=1}^{N}\frac{T_i(\lambda)}{100}
-\]
+$$
 
 Here, each input transmission \(T_i\) is expressed as a percentage between 0 and 100, and the result is also a percentage.
 
 For example, two filters transmitting 80% and 90% at a given wavelength produce:
 
-\[
+$$
 T_{\mathrm{total}}=100\times0.80\times0.90=72\%
-\]
+$$
 
 ### Different wavelength sampling
 
