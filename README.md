@@ -13,6 +13,8 @@ A browser-based tool for visualizing and combining spectral transmission curves 
 - Automatically calculate and plot **Total Transmission** when two or more curves are selected.
 - Run the application locally without a backend or database server.
 
+![Screenshot](/images/screenshot1.png)
+
 ## Getting started
 
 1. Download `filtros_con_transmitancia_total.html` from this repository.
