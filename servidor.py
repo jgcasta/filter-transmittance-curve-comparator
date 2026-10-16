@@ -27,6 +27,6 @@ class Handler(SimpleHTTPRequestHandler):
         super().do_GET()
 
 if __name__ == "__main__":
-    print("Abre http://127.0.0.1:8765/filtros_auto_data.html")
+    print("Abre http://127.0.0.1:8765/index.html")
     print("Copia los CSV a la carpeta data/ y recarga la página.")
     ThreadingHTTPServer(("127.0.0.1", 8765), Handler).serve_forever()
