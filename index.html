@@ -177,6 +177,7 @@
         </div>
 
         <select id="curveSelector" multiple></select>
+        <div id="dataLoadStatus" role="status" style="font-size:12px;color:#546e7a;margin:-7px 0 14px"></div>
 
         <div class="buttons">
             <button class="rename" id="renameButton">
@@ -207,13 +208,13 @@
             <br><br>
             Example:
             <br>
-            400,0.12
+            400,12
             <br>
-            450,0.45
+            450,45
             <br>
-            500,0.82
+            500,82
             <br>
-            550,0.95
+            550,95
         </div>
 
     </div>
@@ -386,6 +387,9 @@ function saveCurve(name, originalName, data) {
 
 function loadCurveList() {
 
+    const selectedBefore = new Set(
+        Array.from(curveSelector.selectedOptions, option => option.value)
+    );
     const transaction =
         db.transaction(
             STORE_NAME,
@@ -412,9 +416,14 @@ function loadCurveList() {
 
             option.value =
                 curve.id;
+            option.selected = selectedBefore.has(String(curve.id));
 
             option.textContent =
-                curve.name;
+                curve.sourcePath
+                    ? (curve.name === curve.sourcePath.replace(/\.csv$/i, "")
+                        ? curve.sourcePath
+                        : curve.name + " (" + curve.sourcePath + ")")
+                    : curve.name;
 
             curveSelector.appendChild(option);
 
@@ -1333,12 +1342,16 @@ clearSelectionButton.addEventListener(
    Sin duplicados: cada fichero se identifica por sourcePath.
    ========================================================== */
 async function loadDataDirectory() {
-    const count = document.getElementById("fileCount");
+    const status = document.getElementById("dataLoadStatus");
+    status.textContent = "Loading CSV files from data/…";
     try {
         const response = await fetch("./data/manifest.json", {cache:"no-store"});
         if (!response.ok) throw new Error("HTTP " + response.status);
         const filenames = await response.json();
         if (!Array.isArray(filenames)) throw new Error("Invalid file list");
+        const csvFiles = [...new Set(filenames.filter(
+            f => typeof f === "string" && f.toLowerCase().endsWith(".csv")
+        ))].sort((a,b) => a.localeCompare(b));
 
         const readAll = () => new Promise((resolve, reject) => {
             const request = db.transaction(STORE_NAME,"readonly")
@@ -1348,7 +1361,7 @@ async function loadDataDirectory() {
         });
         const existing = await readAll();
         let imported = 0, updated = 0, errors = [];
-        for (const filename of filenames) {
+        for (const filename of csvFiles) {
             try {
                 if (typeof filename !== "string" || filename.startsWith("/") ||
                     filename.split("/").some(part => part === ".." || part === "." || !part)) {
@@ -1382,9 +1395,12 @@ async function loadDataDirectory() {
         loadCurveList();
         // loadCurveList es asíncrona; restauramos la selección al completar el DOM.
         // Se deja sin selección en el primer arranque, igual que la versión original.
+        status.textContent = `${csvFiles.length} CSV files found in data/ — ${imported} added, ${updated} updated` +
+            (errors.length ? `, ${errors.length} failed` : "");
         console.info(`CSVs in data/: ${imported} added, ${updated} updated.`, errors);
         if (errors.length) console.warn("CSVs not imported:", errors);
     } catch(e) {
+        status.textContent = "Could not load data/manifest.json. See browser console.";
         console.warn("Automatic loading unavailable. Check data/manifest.json.",e);
     }
 }
