@@ -1,384 +1,1397 @@
-<!doctype html>
-<html lang="es">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Comparador de curvas de transmision</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Transmission Curve Comparator</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <style>
-:root{
-  --nav:#26343b; --bg:#f3f5f6; --card:#fff; --line:#d9dee2;
-  --text:#20272b; --muted:#667078; --blue:#1477c9; --red:#dc3434; --slate:#58717e;
-}
-*{box-sizing:border-box}
-html,body{height:100%}
-body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,Helvetica,sans-serif}
-header{height:60px;background:var(--nav);color:#fff;display:flex;align-items:center;padding:0 14px;font-size:22px;font-weight:700}
-main{height:calc(100vh - 60px);padding:17px 5px;display:grid;grid-template-columns:293px minmax(0,1fr);gap:16px}
-.card{background:var(--card);border-radius:7px;box-shadow:0 2px 8px rgba(0,0,0,.12)}
-.sidebar{padding:16px 17px;overflow:auto}
-.sidebar h2{font-size:16px;margin:0 0 13px}
-.drop{height:109px;border:2px dashed #5e8193;border-radius:7px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;color:#496b7c;cursor:pointer;line-height:1.9;background:#fff}
-.drop.drag{background:#edf7fc;border-color:#1477c9}
-.drop b{color:#2f4c5a}
-#fileInput{display:none}
-.count{font-size:12px;margin:17px 0 7px;color:#4f565a}
-select{width:100%;height:155px;border:1px solid #222;border-radius:4px;background:#fff;font-size:12px;padding:2px}
-select option{padding:2px 4px}
-.actions{display:flex;gap:8px;margin-top:14px}
-button{border:0;border-radius:4px;padding:8px 11px;color:#fff;font-weight:700;cursor:pointer;font-size:12px}
-button:disabled{opacity:.45;cursor:default}
-.blue{background:var(--blue)} .red{background:var(--red)} .slate{background:var(--slate)}
-.wide-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:13px}
-.wide-actions button{min-height:47px}
-.help{font-size:11px;color:#62686c;line-height:1.55;margin-top:14px}
-.help b{display:block;margin-bottom:15px;color:#555}
-.status{font-size:11px;min-height:16px;margin-top:10px;color:#65727a}
-.chart-card{padding:15px 18px 12px;min-width:0;position:relative}
-.chart-title{text-align:center;font-size:11px;font-weight:700;color:#5b5f62;margin:12px 0 0}
-.chart-area{position:absolute;left:18px;right:18px;top:47px;bottom:12px}
-canvas{width:100%;height:100%;display:block}
-.modal-back{display:none;position:fixed;inset:0;background:rgba(0,0,0,.28);align-items:center;justify-content:center;z-index:10}
-.modal{width:390px;background:#fff;border-radius:8px;padding:20px;box-shadow:0 10px 35px rgba(0,0,0,.25)}
-.modal h3{margin:0 0 14px;font-size:17px}
-.modal input{width:100%;padding:9px;border:1px solid #b8c0c5;border-radius:4px}
-.modal .actions{justify-content:flex-end}
-.tooltip{display:none;position:absolute;pointer-events:none;background:rgba(34,34,34,.92);color:white;padding:7px 9px;border-radius:4px;font-size:11px;line-height:1.45;z-index:4;max-width:330px}
-@media(max-width:850px){
- main{height:auto;grid-template-columns:1fr;padding:10px}
- .chart-card{height:650px}
-}
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
+        font-family: Arial, Helvetica, sans-serif;
+        background: #f4f6f8;
+        color: #222;
+    }
+
+    header {
+        background: #263238;
+        color: white;
+        padding: 18px 30px;
+        font-size: 24px;
+        font-weight: bold;
+    }
+
+    .container {
+        display: grid;
+        grid-template-columns: 340px 1fr;
+        gap: 20px;
+        padding: 20px;
+        height: calc(100vh - 65px);
+    }
+
+    .panel {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        overflow-y: auto;
+    }
+
+    .graph-panel {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        position: relative;
+    }
+
+    h2 {
+        margin-top: 0;
+        font-size: 18px;
+    }
+
+    #dropZone {
+        border: 2px dashed #607d8b;
+        border-radius: 8px;
+        padding: 30px 15px;
+        text-align: center;
+        color: #546e7a;
+        cursor: pointer;
+        transition: 0.2s;
+        margin-bottom: 20px;
+    }
+
+    #dropZone.dragover {
+        background: #eceff1;
+        border-color: #1976d2;
+        color: #1976d2;
+    }
+
+    #fileInput {
+        display: none;
+    }
+
+    select {
+        width: 100%;
+        min-height: 180px;
+        margin-bottom: 15px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        padding: 5px;
+    }
+
+    .buttons {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 15px;
+    }
+
+    button {
+        border: none;
+        border-radius: 5px;
+        padding: 9px 12px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+    .rename {
+        background: #1976d2;
+        color: white;
+    }
+
+    .delete {
+        background: #d32f2f;
+        color: white;
+    }
+
+    .clear {
+        background: #546e7a;
+        color: white;
+    }
+
+    button:hover {
+        opacity: 0.88;
+    }
+
+    .info {
+        font-size: 13px;
+        color: #666;
+        line-height: 1.5;
+    }
+
+    #chartContainer {
+        width: 100%;
+        height: 100%;
+        min-height: 500px;
+    }
+
+    canvas {
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    .file-count {
+        font-size: 13px;
+        margin-bottom: 8px;
+        color: #555;
+    }
+
 </style>
 </head>
+
 <body>
-<header>Comparador de curvas de transmision</header>
 
-<main>
-  <aside class="card sidebar">
-    <h2>Curvas disponibles</h2>
+<header>
+    Transmission Curve Comparator
+</header>
 
-    <div id="drop" class="drop">
-      <div>Arrastra aquí los archivos CSV</div>
-      <b>o haz clic para seleccionarlos</b>
+<div class="container">
+
+    <!-- PANEL IZQUIERDO -->
+    <div class="panel">
+
+        <h2>Available curves</h2>
+
+        <div id="dropZone">
+            Drag CSV files here
+            <br><br>
+            <strong>or click to select them</strong>
+        </div>
+
+        <input
+            type="file"
+            id="fileInput"
+            accept=".csv,text/csv"
+            multiple
+        >
+
+        <div id="fileCount" class="file-count">
+            0 stored curves
+        </div>
+
+        <select id="curveSelector" multiple></select>
+
+        <div class="buttons">
+            <button class="rename" id="renameButton">
+                Rename
+            </button>
+
+            <button class="delete" id="deleteButton">
+                Delete
+            </button>
+        </div>
+
+        <div class="buttons">
+            <button class="clear" id="selectAllButton">
+                Select all
+            </button>
+
+            <button class="clear" id="clearSelectionButton">
+                Clear selection
+            </button>
+        </div>
+
+        <div class="info">
+            <strong>Expected CSV format:</strong>
+            <br><br>
+            Two numeric columns:
+            <br>
+            Wavelength, Transmission
+            <br><br>
+            Example:
+            <br>
+            400,0.12
+            <br>
+            450,0.45
+            <br>
+            500,0.82
+            <br>
+            550,0.95
+        </div>
+
     </div>
-    <input id="fileInput" type="file" accept=".csv,text/csv" multiple>
 
-    <div id="storedCount" class="count">0 curvas almacenadas</div>
-    <select id="curveList" multiple aria-label="Curvas disponibles"></select>
+    <!-- GRÁFICO -->
+    <div class="graph-panel">
 
-    <div class="actions">
-      <button id="renameBtn" class="blue">Renombrar</button>
-      <button id="deleteBtn" class="red">Eliminar</button>
+        <div id="chartContainer">
+            <canvas id="transmissionChart"></canvas>
+        </div>
+
     </div>
 
-    <div class="wide-actions">
-      <button id="allBtn" class="slate">Seleccionar<br>todas</button>
-      <button id="clearBtn" class="slate">Limpiar<br>selección</button>
-    </div>
-
-    <div class="help">
-      <b>Formato CSV esperado:</b>
-      Dos columnas numéricas:<br>
-      Longitud de onda, Transmisión<br><br>
-      Ejemplo:<br>
-      400,0.12<br>
-      450,0.45<br>
-      500,0.82<br>
-      550,0.95
-    </div>
-    <div id="status" class="status"></div>
-  </aside>
-
-  <section class="card chart-card">
-    <div class="chart-title">Curvas de transmisión</div>
-    <div class="chart-area">
-      <canvas id="chart"></canvas>
-      <div id="tooltip" class="tooltip"></div>
-    </div>
-  </section>
-</main>
-
-<div id="renameModal" class="modal-back">
-  <div class="modal">
-    <h3>Cambiar nombre</h3>
-    <input id="renameInput" type="text" maxlength="150">
-    <div class="actions">
-      <button id="cancelRename" class="slate">Cancelar</button>
-      <button id="saveRename" class="blue">Guardar</button>
-    </div>
-  </div>
 </div>
 
+
 <script>
-(()=>{
-"use strict";
 
-/* ---------- Persistencia local ---------- */
-const DB_NAME="comparador_curvas_transmision_db", STORE="curves", DB_VERSION=1;
-let db, curves=[], plottedSeries=[], plotGeometry=null;
+/* ==========================================================
+   CONFIGURACIÓN
+   ========================================================== */
 
-function openDB(){
-  return new Promise((resolve,reject)=>{
-    const r=indexedDB.open(DB_NAME,DB_VERSION);
-    r.onupgradeneeded=()=>{
-      const d=r.result;
-      if(!d.objectStoreNames.contains(STORE))
-        d.createObjectStore(STORE,{keyPath:"id",autoIncrement:true});
+const DB_NAME = "TransmissionCurveDB";
+const DB_VERSION = 1;
+const STORE_NAME = "curves";
+
+let db;
+
+
+/* ==========================================================
+   COLORES
+   ========================================================== */
+
+const COLORS = [
+
+    "#e6194b",
+    "#3cb44b",
+    "#4363d8",
+    "#f58231",
+    "#911eb4",
+    "#46f0f0",
+    "#f032e6",
+    "#bcf60c",
+    "#fabebe",
+    "#008080",
+    "#e6beff",
+    "#9a6324",
+    "#800000",
+    "#808000",
+    "#000075",
+    "#808080"
+
+];
+
+
+/* ==========================================================
+   ELEMENTOS HTML
+   ========================================================== */
+
+const dropZone =
+    document.getElementById("dropZone");
+
+const fileInput =
+    document.getElementById("fileInput");
+
+const curveSelector =
+    document.getElementById("curveSelector");
+
+const renameButton =
+    document.getElementById("renameButton");
+
+const deleteButton =
+    document.getElementById("deleteButton");
+
+const selectAllButton =
+    document.getElementById("selectAllButton");
+
+const clearSelectionButton =
+    document.getElementById("clearSelectionButton");
+
+const fileCount =
+    document.getElementById("fileCount");
+
+
+/* ==========================================================
+   INDEXED DB
+   ========================================================== */
+
+function openDatabase() {
+
+    const request =
+        indexedDB.open(DB_NAME, DB_VERSION);
+
+    request.onupgradeneeded = function(event) {
+
+        db = event.target.result;
+
+        if (!db.objectStoreNames.contains(STORE_NAME)) {
+
+            db.createObjectStore(
+                STORE_NAME,
+                {
+                    keyPath: "id",
+                    autoIncrement: true
+                }
+            );
+
+        }
+
     };
-    r.onsuccess=()=>resolve(r.result);
-    r.onerror=()=>reject(r.error);
-  });
-}
-function store(mode="readonly"){return db.transaction(STORE,mode).objectStore(STORE)}
-function dbAll(){return new Promise((ok,no)=>{let r=store().getAll();r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
-function dbAdd(v){return new Promise((ok,no)=>{let r=store("readwrite").add(v);r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
-function dbPut(v){return new Promise((ok,no)=>{let r=store("readwrite").put(v);r.onsuccess=()=>ok();r.onerror=()=>no(r.error)})}
-function dbDelete(id){return new Promise((ok,no)=>{let r=store("readwrite").delete(id);r.onsuccess=()=>ok();r.onerror=()=>no(r.error)})}
 
-/* ---------- DOM ---------- */
-const $=id=>document.getElementById(id);
-const drop=$("drop"), fileInput=$("fileInput"), list=$("curveList"), storedCount=$("storedCount");
-const status=$("status"), renameBtn=$("renameBtn"), deleteBtn=$("deleteBtn");
-const modal=$("renameModal"), renameInput=$("renameInput"), canvas=$("chart"), tooltip=$("tooltip");
-const COLORS=["#ff1744","#1479ff","#00a86b","#9b36d0","#ff8c00","#00a7b7","#8b5a2b","#d0009f","#657b00","#4557c4","#009688","#c62828","#6a1b9a","#2e7d32","#ef6c00"];
+    request.onsuccess = function(event) {
 
-function message(s,bad=false){status.textContent=s;status.style.color=bad?"#b42318":"#65727a"}
-function selectedIds(){return [...list.selectedOptions].map(o=>Number(o.value))}
-function selectedCurves(){let ids=new Set(selectedIds());return curves.filter(c=>ids.has(c.id))}
+        db = event.target.result;
 
-function renderList(keepIds=null){
-  const keep=new Set(keepIds ?? selectedIds());
-  list.innerHTML="";
-  curves.sort((a,b)=>a.name.localeCompare(b.name,"es")).forEach(c=>{
-    const o=document.createElement("option");
-    o.value=c.id; o.textContent=c.name; o.selected=keep.has(c.id); list.appendChild(o);
-  });
-  storedCount.textContent=`${curves.length} ${curves.length===1?"curva almacenada":"curvas almacenadas"}`;
-  selectionChanged();
-}
-function selectionChanged(){
-  const n=selectedIds().length;
-  renameBtn.disabled=n!==1; deleteBtn.disabled=n===0;
-  draw();
+        loadCurveList();
+        loadDataDirectory();
+
+    };
+
+    request.onerror = function(event) {
+
+        console.error(
+            "Error opening IndexedDB",
+            event
+        );
+
+    };
+
 }
 
-/* ---------- CSV ---------- */
-function delimiterOf(line){
-  const c=[",",";","\t"].map(d=>[d,line.split(d).length]);
-  c.sort((a,b)=>b[1]-a[1]); return c[0][0];
-}
-function num(v, decimalComma){
-  v=String(v??"").trim().replace(/^["']|["']$/g,"");
-  if(decimalComma) v=v.replace(/\./g,"").replace(",",".");
-  return Number(v);
-}
-function parseCSV(text){
-  let lines=text.replace(/^\uFEFF/,"").split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
-  if(lines.length<2) throw Error("el CSV no contiene suficientes filas");
-  let delimiter=delimiterOf(lines[0]);
-  let rows=lines.map(l=>l.split(delimiter).map(x=>x.trim()));
-  if(rows[0].length<2) throw Error("se necesitan al menos dos columnas");
-  let decimalComma=delimiter===";" && rows.some(r=>r.slice(0,2).some(v=>/^-?\d+,\d+$/.test(v)));
-  let start=(!Number.isFinite(num(rows[0][0],decimalComma))||!Number.isFinite(num(rows[0][1],decimalComma)))?1:0;
-  let data=[];
-  for(let i=start;i<rows.length;i++){
-    let x=num(rows[i][0],decimalComma), y=num(rows[i][1],decimalComma);
-    if(Number.isFinite(x)&&Number.isFinite(y)) data.push({x,y});
-  }
-  if(data.length<2) throw Error("no se encontraron suficientes pares X,Y numéricos");
-  data.sort((a,b)=>a.x-b.x);
-  // Elimina X duplicadas conservando la última
-  const m=new Map(); data.forEach(p=>m.set(p.x,p.y));
-  return [...m].map(([x,y])=>({x,y})).sort((a,b)=>a.x-b.x);
-}
-function uniqueName(base){
-  let names=new Set(curves.map(c=>c.name));
-  if(!names.has(base)) return base;
-  let i=2; while(names.has(`${base} (${i})`)) i++;
-  return `${base} (${i})`;
-}
-async function importFiles(files){
-  for(const f of files){
-    if(!f.name.toLowerCase().endsWith(".csv")){message(`${f.name}: no es un CSV`,true);continue}
-    try{
-      const raw=await f.text(), data=parseCSV(raw);
-      await dbAdd({name:uniqueName(f.name.replace(/\.csv$/i,"")), originalName:f.name, raw, data, created:Date.now()});
-      curves=await dbAll();
-      message(`${f.name}: ${data.length} puntos cargados`);
-    }catch(e){message(`${f.name}: ${e.message}`,true)}
-  }
-  renderList();
+
+/* ==========================================================
+   GUARDAR CURVA
+   ========================================================== */
+
+function saveCurve(name, originalName, data) {
+
+    const transaction =
+        db.transaction(
+            STORE_NAME,
+            "readwrite"
+        );
+
+    const store =
+        transaction.objectStore(STORE_NAME);
+
+    store.add({
+
+        name: name,
+
+        originalName: originalName,
+
+        data: data,
+
+        created:
+            new Date().toISOString()
+
+    });
+
+    transaction.oncomplete =
+        loadCurveList;
+
 }
 
-/* ---------- Combinación fotométrica ----------
-   T_total(lambda) = product_i T_i(lambda)
-   Las curvas se interpolan linealmente en una malla común.
-   Cada curva puede estar expresada en 0..1 o en porcentaje 0..100.
-*/
-function isPercent(data){
-  // Para curvas de transmisión fotométrica, valores claramente >1 indican porcentaje.
-  return data.some(p=>Math.abs(p.y)>1.5);
+
+/* ==========================================================
+   CARGAR LISTADO
+   ========================================================== */
+
+function loadCurveList() {
+
+    const transaction =
+        db.transaction(
+            STORE_NAME,
+            "readonly"
+        );
+
+    const store =
+        transaction.objectStore(STORE_NAME);
+
+    const request =
+        store.getAll();
+
+    request.onsuccess = function() {
+
+        const curves =
+            request.result;
+
+        curveSelector.innerHTML = "";
+
+        curves.forEach(curve => {
+
+            const option =
+                document.createElement("option");
+
+            option.value =
+                curve.id;
+
+            option.textContent =
+                curve.name;
+
+            curveSelector.appendChild(option);
+
+        });
+
+        fileCount.textContent =
+            curves.length +
+            (curves.length === 1
+                ? " stored curve"
+                : " stored curves");
+
+        updateChart();
+
+    };
+
 }
-function interpolate(data,x){
-  if(x<data[0].x || x>data[data.length-1].x) return null;
-  let lo=0,hi=data.length-1;
-  while(hi-lo>1){let m=(lo+hi)>>1;if(data[m].x<=x)lo=m;else hi=m}
-  let a=data[lo],b=data[hi];
-  if(x===a.x)return a.y;if(x===b.x)return b.y;
-  return a.y+(b.y-a.y)*(x-a.x)/(b.x-a.x);
-}
-function combined(cs){
-  if(cs.length<2)return null;
-  const xmin=Math.max(...cs.map(c=>c.data[0].x));
-  const xmax=Math.min(...cs.map(c=>c.data[c.data.length-1].x));
-  if(xmax<xmin)return [];
-  const xs=[...new Set(cs.flatMap(c=>c.data.filter(p=>p.x>=xmin&&p.x<=xmax).map(p=>p.x)))].sort((a,b)=>a-b);
-  const percentFlags=cs.map(c=>isPercent(c.data));
-  return xs.map(x=>{
-    let product=1;
-    for(let i=0;i<cs.length;i++){
-      let y=interpolate(cs[i].data,x);
-      if(y===null)return null;
-      product*=percentFlags[i]?y/100:y;
+
+
+/* ==========================================================
+   PARSER CSV
+   ========================================================== */
+
+function parseCSV(text) {
+
+    const lines =
+        text
+        .trim()
+        .split(/\r?\n/);
+
+    const data = [];
+
+    for (let line of lines) {
+
+        line = line.trim();
+
+        if (!line)
+            continue;
+
+        /*
+        Detectamos delimitador:
+        coma
+        punto y coma
+        tabulador
+        */
+
+        let parts;
+
+        if (line.includes(";")) {
+
+            parts = line.split(";");
+
+        }
+        else if (line.includes("\t")) {
+
+            parts = line.split("\t");
+
+        }
+        else {
+
+            parts = line.split(",");
+
+        }
+
+        if (parts.length < 2)
+            continue;
+
+        let x =
+            parseFloat(
+                parts[0]
+                .trim()
+                .replace(",", ".")
+            );
+
+        let y =
+            parseFloat(
+                parts[1]
+                .trim()
+                .replace(",", ".")
+            );
+
+        /*
+        Ignora automáticamente
+        cabeceras no numéricas.
+        */
+
+        if (
+            Number.isFinite(x) &&
+            Number.isFinite(y)
+        ) {
+
+            data.push({
+                x: x,
+                y: y
+            });
+
+        }
+
     }
-    return {x,y:product*100}; // curva combinada representada en %
-  }).filter(Boolean);
+
+    /*
+    Ordenamos por longitud
+    de onda
+    */
+
+    data.sort(
+        (a,b) => a.x - b.x
+    );
+
+    return data;
+
 }
 
-/* ---------- Gráfico Canvas ---------- */
-function nice(v){
-  const a=Math.abs(v);
-  if((a>0&&a<.01)||a>=10000)return v.toExponential(2);
-  return String(Number(v.toFixed(a<10?2:a<100?1:0)));
-}
-function draw(){
-  const box=canvas.getBoundingClientRect(), dpr=window.devicePixelRatio||1;
-  if(!box.width||!box.height)return;
-  canvas.width=Math.round(box.width*dpr);canvas.height=Math.round(box.height*dpr);
-  const ctx=canvas.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);
-  const W=box.width,H=box.height;ctx.clearRect(0,0,W,H);
 
-  const cs=selectedCurves();
-  plottedSeries=cs.map((c,i)=>({name:c.name,data:c.data,color:COLORS[i%COLORS.length],dash:false}));
-  const comb=combined(cs);
-  if(cs.length>1&&comb&&comb.length)plottedSeries.push({name:"Transmitancia total",data:comb,color:"#111",dash:true});
+/* ==========================================================
+   PROCESAR ARCHIVOS
+   ========================================================== */
 
-  if(!plottedSeries.length){
-    ctx.fillStyle="#8b9398";ctx.font="13px Arial";ctx.textAlign="center";
-    ctx.fillText("Selecciona una o varias curvas",W/2,H/2);plotGeometry=null;return;
-  }
+function processFiles(files) {
 
-  const all=plottedSeries.flatMap(s=>s.data);
-  let xmin=Math.min(...all.map(p=>p.x)),xmax=Math.max(...all.map(p=>p.x));
-  let ymin=Math.min(0,...all.map(p=>p.y)),ymax=Math.max(...all.map(p=>p.y));
-  if(xmax===xmin){xmin--;xmax++} if(ymax===ymin){ymax=ymin+1}
-  // Mantiene 100 como referencia natural cuando corresponde.
-  if(ymax<=100)ymax=100;
+    Array.from(files)
+        .forEach(file => {
 
-  const L=63,R=14,T=42,B=48,PW=W-L-R,PH=H-T-B;
-  const X=x=>L+(x-xmin)/(xmax-xmin)*PW, Y=y=>T+PH-(y-ymin)/(ymax-ymin)*PH;
-  plotGeometry={L,R,T,B,PW,PH,xmin,xmax,ymin,ymax,X,Y,W,H};
+            if (
+                !file.name
+                .toLowerCase()
+                .endsWith(".csv")
+            ) {
 
-  ctx.font="10px Arial";
-  for(let i=0;i<=9;i++){
-    let x=L+PW*i/9,v=xmin+(xmax-xmin)*i/9;
-    ctx.strokeStyle="#d9dde0";ctx.lineWidth=.7;ctx.beginPath();ctx.moveTo(x,T);ctx.lineTo(x,T+PH);ctx.stroke();
-    ctx.fillStyle="#60666a";ctx.textAlign="center";ctx.fillText(nice(v),x,T+PH+20);
-  }
-  for(let i=0;i<=10;i++){
-    let y=T+PH-PH*i/10,v=ymin+(ymax-ymin)*i/10;
-    ctx.strokeStyle="#d9dde0";ctx.lineWidth=.7;ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(L+PW,y);ctx.stroke();
-    ctx.fillStyle="#60666a";ctx.textAlign="right";ctx.fillText(nice(v),L-8,y+3);
-  }
-  ctx.strokeStyle="#cfd4d7";ctx.strokeRect(L,T,PW,PH);
+                return;
 
-  ctx.fillStyle="#5e6366";ctx.font="10px Arial";ctx.textAlign="center";
-  ctx.fillText("Longitud de onda (nm)",L+PW/2,H-7);
-  ctx.save();ctx.translate(14,T+PH/2);ctx.rotate(-Math.PI/2);ctx.fillText("Transmisión",0,0);ctx.restore();
+            }
 
-  plottedSeries.forEach(s=>{
-    ctx.strokeStyle=s.color;ctx.lineWidth=s.dash?2.2:1.7;ctx.setLineDash(s.dash?[8,5]:[]);
-    ctx.beginPath();
-    s.data.forEach((p,i)=>{let x=X(p.x),y=Y(p.y);i?ctx.lineTo(x,y):ctx.moveTo(x,y)});
-    ctx.stroke();ctx.setLineDash([]);
-  });
-  drawLegend(ctx,plottedSeries,W,T);
-}
-function drawLegend(ctx,series,W,T){
-  ctx.font="10px Arial";
-  const maxW=Math.max(...series.map(s=>ctx.measureText(s.name).width));
-  const bw=Math.min(W-100,maxW+52), bh=series.length*19+12, x=W-bw-22, y=T-32;
-  ctx.fillStyle="rgba(255,255,255,.94)";ctx.fillRect(x,y,bw,bh);
-  series.forEach((s,i)=>{
-    const yy=y+15+i*19;
-    ctx.strokeStyle=s.color;ctx.lineWidth=s.dash?2.2:5;ctx.setLineDash(s.dash?[7,4]:[]);
-    ctx.beginPath();ctx.moveTo(x+8,yy-3);ctx.lineTo(x+34,yy-3);ctx.stroke();ctx.setLineDash([]);
-    ctx.fillStyle="#555";ctx.textAlign="left";
-    let n=s.name;while(ctx.measureText(n).width>bw-46&&n.length>5)n=n.slice(0,-2);
-    if(n!==s.name)n+="…";ctx.fillText(n,x+40,yy);
-  });
+            const reader =
+                new FileReader();
+
+            reader.onload =
+                function(event) {
+
+                    const text =
+                        event.target.result;
+
+                    const data =
+                        parseCSV(text);
+
+                    if (data.length === 0) {
+
+                        alert(
+                            "No valid data found in:\n" +
+                            file.name
+                        );
+
+                        return;
+
+                    }
+
+                    /*
+                    Quitamos extensión CSV
+                    para usarla como nombre
+                    inicial.
+                    */
+
+                    const displayName =
+                        file.name
+                        .replace(
+                            /\.csv$/i,
+                            ""
+                        );
+
+                    saveCurve(
+                        displayName,
+                        file.name,
+                        data
+                    );
+
+                };
+
+            reader.readAsText(file);
+
+        });
+
 }
 
-/* Tooltip: punto/interpolación más próximo a la X del ratón */
-canvas.addEventListener("mousemove",e=>{
-  if(!plotGeometry||!plottedSeries.length){tooltip.style.display="none";return}
-  const g=plotGeometry,r=canvas.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;
-  if(mx<g.L||mx>g.L+g.PW||my<g.T||my>g.T+g.PH){tooltip.style.display="none";return}
-  const xv=g.xmin+(mx-g.L)/g.PW*(g.xmax-g.xmin);
-  let entries=[];
-  plottedSeries.forEach(s=>{
-    const y=interpolate(s.data,xv);
-    if(y!==null)entries.push(`<span style="color:${s.color}">■</span> ${escapeHTML(s.name)}: ${nice(xv)} nm, ${nice(y)}`);
-  });
-  if(!entries.length){tooltip.style.display="none";return}
-  tooltip.innerHTML=entries.join("<br>");
-  tooltip.style.display="block";
-  const tw=tooltip.offsetWidth,th=tooltip.offsetHeight;
-  tooltip.style.left=Math.min(mx+12,r.width-tw-5)+"px";
-  tooltip.style.top=Math.max(5,Math.min(my+12,r.height-th-5))+"px";
-});
-canvas.addEventListener("mouseleave",()=>tooltip.style.display="none");
-function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 
-/* ---------- Eventos ---------- */
-drop.onclick=()=>fileInput.click();
-fileInput.onchange=async()=>{await importFiles(fileInput.files);fileInput.value=""};
-["dragenter","dragover"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add("drag")}));
-["dragleave","drop"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove("drag")}));
-drop.addEventListener("drop",e=>importFiles(e.dataTransfer.files));
-list.addEventListener("change",selectionChanged);
+/* ==========================================================
+   DRAG & DROP
+   ========================================================== */
 
-$("allBtn").onclick=()=>{[...list.options].forEach(o=>o.selected=true);selectionChanged()};
-$("clearBtn").onclick=()=>{[...list.options].forEach(o=>o.selected=false);selectionChanged()};
+dropZone.addEventListener(
+    "click",
+    () => fileInput.click()
+);
 
-renameBtn.onclick=()=>{
-  const c=selectedCurves()[0];if(!c)return;
-  renameInput.value=c.name;modal.style.display="flex";renameInput.focus();renameInput.select();
-};
-$("cancelRename").onclick=()=>modal.style.display="none";
-$("saveRename").onclick=async()=>{
-  const c=selectedCurves()[0],n=renameInput.value.trim();if(!c||!n)return;
-  if(curves.some(x=>x.id!==c.id&&x.name===n)){message("Ya existe una curva con ese nombre.",true);return}
-  c.name=n;await dbPut(c);curves=await dbAll();modal.style.display="none";renderList([c.id]);message("Nombre actualizado.");
-};
-renameInput.addEventListener("keydown",e=>{if(e.key==="Enter")$("saveRename").click();if(e.key==="Escape")modal.style.display="none"});
 
-deleteBtn.onclick=async()=>{
-  const ids=selectedIds();if(!ids.length)return;
-  if(!confirm(`¿Eliminar ${ids.length} ${ids.length===1?"curva":"curvas"} del almacenamiento local?`))return;
-  for(const id of ids)await dbDelete(id);
-  curves=await dbAll();renderList([]);message("Curva(s) eliminada(s).");
-};
+fileInput.addEventListener(
+    "change",
+    event => {
 
-window.addEventListener("resize",draw);
+        processFiles(
+            event.target.files
+        );
 
-/* ---------- Inicio ---------- */
-(async()=>{
-  try{
-    db=await openDB();curves=await dbAll();renderList([]);
-    message(curves.length?"Curvas locales recuperadas.":"Arrastra archivos CSV para comenzar.");
-  }catch(e){message("No se pudo abrir IndexedDB: "+e.message,true)}
-})();
-})();
+        fileInput.value = "";
+
+    }
+);
+
+
+dropZone.addEventListener(
+    "dragover",
+    event => {
+
+        event.preventDefault();
+
+        dropZone.classList.add(
+            "dragover"
+        );
+
+    }
+);
+
+
+dropZone.addEventListener(
+    "dragleave",
+    () => {
+
+        dropZone.classList.remove(
+            "dragover"
+        );
+
+    }
+);
+
+
+dropZone.addEventListener(
+    "drop",
+    event => {
+
+        event.preventDefault();
+
+        dropZone.classList.remove(
+            "dragover"
+        );
+
+        processFiles(
+            event.dataTransfer.files
+        );
+
+    }
+);
+
+
+/* ==========================================================
+   GRÁFICO
+   ========================================================== */
+
+const ctx =
+    document
+    .getElementById(
+        "transmissionChart"
+    )
+    .getContext("2d");
+
+
+const chart =
+    new Chart(
+        ctx,
+        {
+
+            type: "line",
+
+            data: {
+                datasets: []
+            },
+
+            options: {
+
+                responsive: true,
+
+                maintainAspectRatio: false,
+
+                parsing: false,
+
+                animation: false,
+
+                interaction: {
+
+                    mode: "nearest",
+
+                    intersect: false
+
+                },
+
+                plugins: {
+
+                    legend: {
+
+                        display: true,
+
+                        position: "top"
+
+                    },
+
+                    title: {
+
+                        display: true,
+
+                        text:
+                            "Transmission curves"
+
+                    },
+
+                    tooltip: {
+
+                        callbacks: {
+
+                            label:
+                            function(context) {
+
+                                return (
+                                    context.dataset.label +
+                                    ": " +
+                                    context.parsed.x +
+                                    " nm, " +
+                                    context.parsed.y
+                                );
+
+                            }
+
+                        }
+
+                    }
+
+                },
+
+                scales: {
+
+                    x: {
+
+                        type: "linear",
+
+                        title: {
+
+                            display: true,
+
+                            text:
+                                "Wavelength (nm)"
+
+                        }
+
+                    },
+
+                    y: {
+
+                        title: {
+
+                            display: true,
+
+                            text:
+                                "Transmission (%)"
+
+                        }
+
+                    }
+
+                }
+
+            }
+
+        }
+    );
+
+
+/* ==========================================================
+   ACTUALIZAR GRÁFICO
+   ========================================================== */
+
+/* ==========================================================
+   INTERPOLACIÓN Y TRANSMITANCIA TOTAL
+   T_total(lambda) = producto_i T_i(lambda)
+
+   IMPORTANTE:
+   Todas las transmitancias se consideran expresadas entre
+   0 y 100. Para multiplicarlas se convierten temporalmente
+   a 0..1 y el resultado vuelve a expresarse en porcentaje:
+
+   T_total(%) = 100 * producto_i [ T_i(%) / 100 ]
+   ========================================================== */
+
+function interpolateTransmission(data, wavelength) {
+
+    if (!data || data.length < 2)
+        return null;
+
+    if (
+        wavelength < data[0].x ||
+        wavelength > data[data.length - 1].x
+    ) {
+        return null;
+    }
+
+    /* Búsqueda binaria de los dos puntos que rodean lambda. */
+    let low = 0;
+    let high = data.length - 1;
+
+    while (high - low > 1) {
+
+        const middle =
+            Math.floor((low + high) / 2);
+
+        if (data[middle].x <= wavelength)
+            low = middle;
+        else
+            high = middle;
+
+    }
+
+    const p1 = data[low];
+    const p2 = data[high];
+
+    if (wavelength === p1.x)
+        return p1.y;
+
+    if (wavelength === p2.x)
+        return p2.y;
+
+    if (p2.x === p1.x)
+        return p1.y;
+
+    /* Interpolación lineal. */
+    return p1.y +
+        (p2.y - p1.y) *
+        (wavelength - p1.x) /
+        (p2.x - p1.x);
+}
+
+
+function calculateTotalTransmission(curves) {
+
+    if (curves.length < 2)
+        return [];
+
+    /*
+       Solo calculamos donde TODAS las curvas tienen datos.
+       Esto evita extrapolar fuera del intervalo medido.
+    */
+    const minWavelength =
+        Math.max(
+            ...curves.map(
+                curve => curve.data[0].x
+            )
+        );
+
+    const maxWavelength =
+        Math.min(
+            ...curves.map(
+                curve =>
+                    curve.data[
+                        curve.data.length - 1
+                    ].x
+            )
+        );
+
+    if (minWavelength > maxWavelength)
+        return [];
+
+    /*
+       Malla espectral común: unión de todas las longitudes
+       de onda existentes dentro del intervalo compartido.
+       Las curvas que no tengan un punto exactamente en lambda
+       se interpolan linealmente.
+    */
+    const wavelengths =
+        Array.from(
+            new Set(
+                curves.flatMap(
+                    curve =>
+                        curve.data
+                            .filter(
+                                point =>
+                                    point.x >= minWavelength &&
+                                    point.x <= maxWavelength
+                            )
+                            .map(point => point.x)
+                )
+            )
+        )
+        .sort((a, b) => a - b);
+
+    const totalData = [];
+
+    wavelengths.forEach(wavelength => {
+
+        let totalFraction = 1;
+        let valid = true;
+
+        for (const curve of curves) {
+
+            const transmission =
+                interpolateTransmission(
+                    curve.data,
+                    wavelength
+                );
+
+            if (!Number.isFinite(transmission)) {
+                valid = false;
+                break;
+            }
+
+            /*
+               Entrada: 0..100 %
+               Conversión: porcentaje -> fracción 0..1
+            */
+            const fraction =
+                Math.max(
+                    0,
+                    Math.min(100, transmission)
+                ) / 100;
+
+            totalFraction *= fraction;
+        }
+
+        if (valid) {
+
+            totalData.push({
+                x: wavelength,
+                y: totalFraction * 100
+            });
+
+        }
+
+    });
+
+    return totalData;
+}
+
+
+/* ==========================================================
+   ACTUALIZAR GRÁFICO
+   ========================================================== */
+
+function updateChart() {
+
+    const selectedIDs =
+        Array.from(
+            curveSelector.selectedOptions
+        )
+        .map(
+            option =>
+                Number(option.value)
+        );
+
+    if (selectedIDs.length === 0) {
+
+        chart.data.datasets = [];
+        chart.update();
+        return;
+
+    }
+
+    const transaction =
+        db.transaction(
+            STORE_NAME,
+            "readonly"
+        );
+
+    const store =
+        transaction.objectStore(
+            STORE_NAME
+        );
+
+    /*
+       Guardamos cada curva en su posición original para que
+       el orden y los colores coincidan con la selección.
+    */
+    const selectedCurves =
+        new Array(selectedIDs.length);
+
+    let completed = 0;
+
+    selectedIDs.forEach(
+        (id, index) => {
+
+            const request =
+                store.get(id);
+
+            request.onsuccess =
+                function() {
+
+                    selectedCurves[index] =
+                        request.result || null;
+
+                    completed++;
+
+                    if (
+                        completed ===
+                        selectedIDs.length
+                    ) {
+
+                        const validCurves =
+                            selectedCurves.filter(Boolean);
+
+                        const datasets = [];
+
+                        validCurves.forEach(
+                            (curve, index) => {
+
+                                const color =
+                                    COLORS[
+                                        index %
+                                        COLORS.length
+                                    ];
+
+                                datasets.push({
+
+                                    label:
+                                        curve.name,
+
+                                    data:
+                                        curve.data,
+
+                                    borderColor:
+                                        color,
+
+                                    backgroundColor:
+                                        color,
+
+                                    borderWidth: 2,
+
+                                    pointRadius: 0,
+
+                                    pointHoverRadius: 4,
+
+                                    tension: 0
+
+                                });
+
+                            }
+                        );
+
+                        /*
+                           Si hay dos o más curvas seleccionadas,
+                           calculamos:
+
+                           T_total(lambda) = producto_i T_i(lambda)
+
+                           con resultado final entre 0 y 100 %.
+                        */
+                        if (validCurves.length > 1) {
+
+                            const totalData =
+                                calculateTotalTransmission(
+                                    validCurves
+                                );
+
+                            if (totalData.length > 0) {
+
+                                datasets.push({
+
+                                    label:
+                                        "Total transmission",
+
+                                    data:
+                                        totalData,
+
+                                    borderColor:
+                                        "#000000",
+
+                                    backgroundColor:
+                                        "#000000",
+
+                                    borderWidth: 3,
+
+                                    borderDash:
+                                        [8, 5],
+
+                                    pointRadius: 0,
+
+                                    pointHoverRadius: 5,
+
+                                    tension: 0
+
+                                });
+
+                            }
+
+                        }
+
+                        chart.data.datasets =
+                            datasets;
+
+                        /* Escala porcentual solicitada. */
+                        chart.options.scales.y.min = 0;
+                        chart.options.scales.y.max = 100;
+
+                        chart.update();
+
+                    }
+
+                };
+
+        }
+    );
+
+}
+
+
+/* ==========================================================
+   SELECCIÓN
+   ========================================================== */
+
+curveSelector.addEventListener(
+    "change",
+    updateChart
+);
+
+
+/* ==========================================================
+   RENOMBRAR
+   ========================================================== */
+
+renameButton.addEventListener(
+    "click",
+    function() {
+
+        const selected =
+            curveSelector
+            .selectedOptions;
+
+        if (
+            selected.length !== 1
+        ) {
+
+            alert(
+                "Select exactly one curve to rename it."
+            );
+
+            return;
+
+        }
+
+        const option =
+            selected[0];
+
+        const id =
+            Number(option.value);
+
+        const newName =
+            prompt(
+                "New name:",
+                option.textContent
+            );
+
+        if (
+            !newName ||
+            !newName.trim()
+        )
+            return;
+
+        const transaction =
+            db.transaction(
+                STORE_NAME,
+                "readwrite"
+            );
+
+        const store =
+            transaction.objectStore(
+                STORE_NAME
+            );
+
+        const request =
+            store.get(id);
+
+        request.onsuccess =
+            function() {
+
+                const curve =
+                    request.result;
+
+                curve.name =
+                    newName.trim();
+
+                store.put(curve);
+
+            };
+
+        transaction.oncomplete =
+            loadCurveList;
+
+    }
+);
+
+
+/* ==========================================================
+   ELIMINAR
+   ========================================================== */
+
+deleteButton.addEventListener(
+    "click",
+    function() {
+
+        const selected =
+            Array.from(
+                curveSelector
+                .selectedOptions
+            );
+
+        if (
+            selected.length === 0
+        ) {
+
+            alert(
+                "Select at least one curve."
+            );
+
+            return;
+
+        }
+
+        const names =
+            selected
+            .map(
+                option =>
+                    option.textContent
+            )
+            .join("\n");
+
+        if (
+            !confirm(
+                "Delete the following curves?\n\n" +
+                names
+            )
+        ) {
+
+            return;
+
+        }
+
+        const transaction =
+            db.transaction(
+                STORE_NAME,
+                "readwrite"
+            );
+
+        const store =
+            transaction.objectStore(
+                STORE_NAME
+            );
+
+        selected.forEach(
+            option => {
+
+                store.delete(
+                    Number(
+                        option.value
+                    )
+                );
+
+            }
+        );
+
+        transaction.oncomplete =
+            loadCurveList;
+
+    }
+);
+
+
+/* ==========================================================
+   SELECCIONAR TODAS
+   ========================================================== */
+
+selectAllButton.addEventListener(
+    "click",
+    function() {
+
+        Array.from(
+            curveSelector.options
+        )
+        .forEach(
+            option =>
+                option.selected = true
+        );
+
+        updateChart();
+
+    }
+);
+
+
+/* ==========================================================
+   LIMPIAR SELECCIÓN
+   ========================================================== */
+
+clearSelectionButton.addEventListener(
+    "click",
+    function() {
+
+        Array.from(
+            curveSelector.options
+        )
+        .forEach(
+            option =>
+                option.selected = false
+        );
+
+        updateChart();
+
+    }
+);
+
+
+
+/* ==========================================================
+   CARGA AUTOMÁTICA DE TODOS LOS CSV DE /data
+   Requiere el servidor local servidor.py.
+   Sin duplicados: cada fichero se identifica por sourcePath.
+   ========================================================== */
+async function loadDataDirectory() {
+    const count = document.getElementById("fileCount");
+    try {
+        const response = await fetch("/api/data-files", {cache:"no-store"});
+        if (!response.ok) throw new Error("HTTP " + response.status);
+        const filenames = await response.json();
+        if (!Array.isArray(filenames)) throw new Error("Invalid file list");
+
+        const readAll = () => new Promise((resolve, reject) => {
+            const request = db.transaction(STORE_NAME,"readonly")
+                              .objectStore(STORE_NAME).getAll();
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+        const existing = await readAll();
+        let imported = 0, updated = 0, errors = [];
+        for (const filename of filenames) {
+            try {
+                const url = "/data/" + filename.split("/").map(encodeURIComponent).join("/");
+                const res = await fetch(url, {cache:"no-store"});
+                if (!res.ok) throw new Error("HTTP " + res.status);
+                const csv = await res.text();
+                const data = parseCSV(csv);
+                if (data.length < 2) throw new Error("CSV has insufficient data");
+                const old = existing.find(c => c.sourcePath === filename);
+                const curve = old ? {...old, data, originalName: filename} : {
+                    name: filename.replace(/\.csv$/i,""),
+                    originalName: filename,
+                    sourcePath: filename,
+                    data,
+                    created: new Date().toISOString()
+                };
+                await new Promise((resolve,reject) => {
+                    const request = db.transaction(STORE_NAME,"readwrite")
+                                      .objectStore(STORE_NAME).put(curve);
+                    request.onsuccess = resolve;
+                    request.onerror = () => reject(request.error);
+                });
+                if (old) updated++; else imported++;
+            } catch (e) { errors.push(filename + ": " + e.message); }
+        }
+        // Preservar la selección actual al actualizar la lista.
+        const selected = new Set(Array.from(curveSelector.selectedOptions, o => String(o.value)));
+        loadCurveList();
+        // loadCurveList es asíncrona; restauramos la selección al completar el DOM.
+        // Se deja sin selección en el primer arranque, igual que la versión original.
+        console.info(`CSVs in data/: ${imported} added, ${updated} updated.`, errors);
+        if (errors.length) console.warn("CSVs not imported:", errors);
+    } catch(e) {
+        console.warn("Automatic loading unavailable. Start the application using server.py.",e);
+    }
+}
+
+/* ==========================================================
+   INICIO
+   ========================================================== */
+
+openDatabase();
+
 </script>
+
 </body>
 </html>
