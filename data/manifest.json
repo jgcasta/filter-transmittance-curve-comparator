@@ -1,1 +1,21 @@
-[]
+[
+  "cmos_zwo_asi585mm_qe_curve_approx.csv",
+  "emision_compuesta_contaminacion_luminica_urbana_moderna.csv",
+  "emision_compuesta_mercurio_hps_lps.csv",
+  "emision_espectral_led_blanco.csv",
+  "emision_espectral_led_calido_2700_3000K.csv",
+  "emision_nebulosa_planetaria.csv",
+  "f_astronomik_cls_ccd_transmission_digitized.csv",
+  "f_baader_bessell_V.csv",
+  "f_baader_h_alpha_passfilter_20nm_transmission_digitized.csv",
+  "f_baader_OIII_8nm_f2_highspeed_curva_aproximada.csv",
+  "f_baader_rgb_cmos_b_transmission_digitized.csv",
+  "f_baader_rgb_cmos_g_transmission_digitized.csv",
+  "f_baader_rgb_cmos_r_transmission_digitized.csv",
+  "f_baader_solar_continuum_540nm.csv",
+  "f_baader_uhc_l_transmission_digitized.csv",
+  "f_baader_uv_ir_cut_l_filter_transmission_digitized.csv",
+  "f_jonhson_v.csv",
+  "tubo_askar_50p_transmision_estimada.csv",
+  "tubo_evostar_ED80_objective_transmission_estimated.csv"
+]
