@@ -2,6 +2,8 @@
 
 A local web application for viewing, managing, and combining spectral transmission curves from CSV files. It is designed for astronomy and astrophotography applications, such as comparing optical filters and estimating the combined transmission of an optical train.
 
+https://jgcasta.github.io/filter-transmittance-curve-comparator/
+
 ## Features
 
 - Automatically discovers and imports **all CSV files** in the `data/` directory (including subdirectories) when the page loads.
