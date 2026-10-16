@@ -1328,14 +1328,14 @@ clearSelectionButton.addEventListener(
 
 
 /* ==========================================================
-   CARGA AUTOMÁTICA DE TODOS LOS CSV DE /data
-   Requiere el servidor local servidor.py.
+   AUTO-LOAD CSV FILES FROM data/manifest.json
+   Works on GitHub Pages without a Python server.
    Sin duplicados: cada fichero se identifica por sourcePath.
    ========================================================== */
 async function loadDataDirectory() {
     const count = document.getElementById("fileCount");
     try {
-        const response = await fetch("/api/data-files", {cache:"no-store"});
+        const response = await fetch("./data/manifest.json", {cache:"no-store"});
         if (!response.ok) throw new Error("HTTP " + response.status);
         const filenames = await response.json();
         if (!Array.isArray(filenames)) throw new Error("Invalid file list");
@@ -1350,7 +1350,11 @@ async function loadDataDirectory() {
         let imported = 0, updated = 0, errors = [];
         for (const filename of filenames) {
             try {
-                const url = "/data/" + filename.split("/").map(encodeURIComponent).join("/");
+                if (typeof filename !== "string" || filename.startsWith("/") ||
+                    filename.split("/").some(part => part === ".." || part === "." || !part)) {
+                    throw new Error("Invalid CSV path");
+                }
+                const url = "./data/" + filename.split("/").map(encodeURIComponent).join("/");
                 const res = await fetch(url, {cache:"no-store"});
                 if (!res.ok) throw new Error("HTTP " + res.status);
                 const csv = await res.text();
@@ -1374,14 +1378,14 @@ async function loadDataDirectory() {
             } catch (e) { errors.push(filename + ": " + e.message); }
         }
         // Preservar la selección actual al actualizar la lista.
-        const selected = new Set(Array.from(curveSelector.selectedOptions, o => String(o.value)));
+        
         loadCurveList();
         // loadCurveList es asíncrona; restauramos la selección al completar el DOM.
         // Se deja sin selección en el primer arranque, igual que la versión original.
         console.info(`CSVs in data/: ${imported} added, ${updated} updated.`, errors);
         if (errors.length) console.warn("CSVs not imported:", errors);
     } catch(e) {
-        console.warn("Automatic loading unavailable. Start the application using server.py.",e);
+        console.warn("Automatic loading unavailable. Check data/manifest.json.",e);
     }
 }
 
