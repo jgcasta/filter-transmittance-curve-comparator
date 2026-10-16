@@ -1,40 +1,66 @@
 # Transmission Curve Comparator
 
-A browser-based tool for visualizing and combining spectral transmission curves from CSV files. Designed for astronomy and astrophotography workflows, including optical filters, telescope optics, and other wavelength-dependent transmission data.
+A local web application for viewing, managing, and combining spectral transmission curves from CSV files. It is designed for astronomy and astrophotography applications, such as comparing optical filters and estimating the combined transmission of an optical train.
 
 ## Features
 
-- Import multiple CSV files using drag and drop or the file picker.
-- Store imported curves locally in the browser using IndexedDB.
-- Select multiple curves and display them together on an interactive XY chart.
-- Rename and delete stored curves.
-- Select all curves or clear the selection.
-- Distinguish curves by color and display a legend.
-- Automatically calculate and plot **Total Transmission** when two or more curves are selected.
-- Run the application locally without a backend or database server.
+- Automatically discovers and imports **all CSV files** in the `data/` directory (including subdirectories) when the page loads.
+- Imports additional CSV files by drag and drop or file selection.
+- Stores curves locally using **IndexedDB**, preserving them between browser sessions.
+- Supports multiple selection, renaming, deletion, **Select all**, and **Clear selection**.
+- Displays selected curves on an interactive wavelength-versus-transmission chart, with distinct colors and a legend.
+- Calculates and plots the **total transmission** when two or more curves are selected.
+- Uses linear interpolation to combine curves sampled at different wavelengths, over their common wavelength range.
+- Runs on your own computer using a small Python HTTP server; no remote application backend is needed.
 
-![Screenshot](/images/screenshot1.png)
+## Requirements
 
-## Getting started
+- Python 3 (standard library only).
+- A modern browser with IndexedDB support.
+- An internet connection to load **Chart.js from jsDelivr** in the current version. All CSV processing and storage remain local.
 
-1. Download `filtros_con_transmitancia_total.html` from this repository.
-2. Open the HTML file in a modern browser.
-3. Drag CSV files onto the upload area, or click it to browse for files.
-4. Select one or more curves from the list to display them.
-5. Select at least two curves to see the combined transmission curve.
+## Repository layout
 
-**Note:** The HTML file loads Chart.js from a CDN, so an internet connection is required to load the charting library unless you replace that dependency with a local copy. CSV storage and calculations take place locally.
+```text
+.
+├── README.md
+├── filtros_auto_data.html
+├── servidor.py
+└── data/
+    ├── filter_OIII.csv
+    ├── filter_Halpha.csv
+    └── ...
+```
+
+The example CSV filenames are illustrative. Put your own files in `data/`; subdirectories are supported.
+
+## Quick start
+
+1. Clone or download the repository.
+2. Copy your CSV files into the `data/` directory.
+3. From the project directory, run:
+
+   ```bash
+   python3 servidor.py
+   ```
+
+4. Open **http://127.0.0.1:8765/filtros_auto_data.html** in your browser.
+
+The server binds to `127.0.0.1` (localhost) on port `8765`. Refresh the page after adding or editing CSV files in `data/` to synchronize them. Stop the server with `Ctrl+C`.
+
+> **Why a local server?** Browsers do not allow a standalone `file://` HTML page to enumerate files in a local directory automatically. `servidor.py` exposes a local `/api/data-files` endpoint that lists CSV files under `data/` and serves those files to the page.
 
 ## CSV format
 
-Each file should contain two numeric columns:
+Each CSV should contain two numerical columns:
 
-1. **Wavelength** in nanometers (nm).
-2. **Transmission** in percent, from **0 to 100**.
+1. Wavelength in **nanometers (nm)**.
+2. Transmission in **percent (0–100)**.
 
 Example:
 
 ```csv
+Wavelength_nm,Transmission_percent
 400,12
 450,45
 500,82
@@ -42,69 +68,53 @@ Example:
 600,88
 ```
 
-The CSV parser supports comma, semicolon, and tab separators and skips nonnumeric header rows. Data points are sorted by wavelength.
+The parser accepts comma, semicolon, or tab delimiters, skips nonnumeric header rows, and sorts points by wavelength. Input transmission values must be percentages: **80 means 80%, not 0.80**.
 
-**Important:** Use percentages, not fractions: `80` means 80% transmission, whereas `0.8` is interpreted as 0.8%.
+## Total transmission
 
-## Total transmission calculation
-
-For multiple optical elements in series, the combined transmission at each wavelength is calculated by multiplying their fractional transmissions:
+For optical components in series, the combined percentage transmission is:
 
 $$
-T_{\mathrm{total}}(\lambda)
-= 100\prod_{i=1}^{N}\frac{T_i(\lambda)}{100}
+T_{\mathrm{total}}(\lambda) = 100\prod_{i=1}^{N}\frac{T_i(\lambda)}{100}
 $$
 
-Here, each input transmission \(T_i\) is expressed as a percentage between 0 and 100, and the result is also a percentage.
+Here, \(T_i(\lambda)\) is the percentage transmission of component \(i\) at wavelength \(\lambda\).
 
-For example, two filters transmitting 80% and 90% at a given wavelength produce:
+For example, if two filters transmit 80% and 90% at the same wavelength:
 
 $$
-T_{\mathrm{total}}=100\times0.80\times0.90=72\%
+T_{\mathrm{total}} = 100\times0.80\times0.90 = 72\%.
 $$
 
-### Different wavelength sampling
+When CSVs have different wavelength sampling, the application interpolates their values linearly onto a common set of wavelengths and calculates the product **only over the overlapping spectral range**. It does not extrapolate outside that range.
 
-CSV files do not need to use identical wavelength points. The application:
+This multiplicative model is suitable for estimating the transmission of independent optical elements. It does not account for effects such as angle-dependent band shifts, multiple reflections, or detector quantum efficiency unless these are explicitly represented in the input curves.
 
-1. Determines the wavelength range shared by all selected curves.
-2. Creates a common wavelength grid from their available data points.
-3. Uses linear interpolation to estimate each transmission at those wavelengths.
-4. Multiplies the interpolated transmissions and plots the resulting curve.
+## Automatic loading and local storage
 
-The combined curve is limited to the overlapping wavelength range; values are not extrapolated beyond the available data.
+On startup, the application asks the local server for the list of CSV files under `data/` and imports them into IndexedDB. Files previously imported from that directory are updated instead of duplicated, while their customized display names are preserved.
 
-## Data storage and privacy
+Manually imported CSVs also remain in IndexedDB. Renaming a curve changes its display name, not the original CSV filename. **Deleting a curve that is still present in `data/` does not permanently exclude it:** it will be imported again the next time the page loads. To remove it permanently, remove or move its source CSV from `data/` as well.
 
-Imported curves are saved in the browser's **IndexedDB** storage. They remain available between sessions as long as the browser retains that site's local data. They are not uploaded to a server.
-
-Browser storage is specific to the browser and origin. Opening the file from a different browser, profile, or URL may show a different collection. Clearing browser data can remove stored curves.
+Browser storage is tied to the browser profile and origin; clearing site data may erase stored curves. CSV data is not sent to a remote server, although the Chart.js library is currently fetched from a public CDN.
 
 ## Technology
 
-- HTML5 and CSS3
-- Vanilla JavaScript
-- IndexedDB for local persistence
-- [Chart.js](https://www.chartjs.org/) for plotting
-
-## Limitations
-
-- The combined curve assumes independent multiplicative transmission through the selected elements.
-- The application expects transmission percentages between 0 and 100.
-- Linear interpolation is an approximation between measured CSV samples.
-- This tool is intended for curve comparison and estimation, not as a substitute for calibrated spectrophotometric measurements.
-
-## Suggested repository structure
-
-```text
-.
-├── README.md
-└── filtros_con_transmitancia_total.html
-└── data
-    └──curve1.csv
-    └──curve2.csv
-```
+- HTML, CSS, and JavaScript
+- [Chart.js](https://www.chartjs.org/)
+- IndexedDB
+- Python 3 standard-library HTTP server
 
 ## License
 
-No license has been specified. Add a `LICENSE` file if you want to define terms for reuse and redistribution.
+This project is licensed under the **Creative Commons Attribution–ShareAlike 4.0 International (CC BY-SA 4.0)** license.
+
+You may share and adapt the material for any purpose, including commercially, provided that you:
+
+- Give appropriate credit, provide a link to the license, and indicate if changes were made.
+- Distribute adaptations under the same license.
+- Do not impose additional legal or technological restrictions that prevent others from exercising the rights granted by the license.
+
+See the [CC BY-SA 4.0 license](https://creativecommons.org/licenses/by-sa/4.0/) for the full terms. For clarity in a GitHub repository, consider also adding a `LICENSE` file containing the official license text.
+
+**Note:** Creative Commons generally recommends using software-specific licenses for source code. CC BY-SA 4.0 is stated here as the requested project license.
